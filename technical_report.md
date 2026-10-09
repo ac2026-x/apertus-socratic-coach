@@ -2,7 +2,7 @@
 
 - **Track:** Track 2B — Bring Your Own Idea (Apertus Scientific Reasoning Coach)
 - **Event:** Hack Apertus Online 2026
-- **Team:** [Your Team Name] — [Your Name], [Teammate Names]
+- **Team:** ST091026 — Ava Chan
 - **Demo:** [Loom / YouTube demo link](<https://example.com>)
 
 ## 1. Summary

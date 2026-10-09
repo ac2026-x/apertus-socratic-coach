@@ -131,5 +131,61 @@
     "end_time": "2026-10-09T15:45:14.973476",
     "user_rating": 4,
     "user_feedback": "ok"
+  },
+  {
+    "session_id": "20261009_181527",
+    "start_time": "2026-10-09T18:15:27.821520",
+    "turns_per_stage": {
+      "1. OBSERVATION": 3,
+      "2. HYPOTHESIS": 1,
+      "3. ALTERNATIVES": 0,
+      "4. PREDICTION": 0,
+      "5. EXPERIMENT": 0,
+      "6. EVIDENCE": 0,
+      "7. INTERPRETATION": 0,
+      "8. REVISION": 0,
+      "9. CONCLUSION": 0
+    },
+    "stuck_clicks": 0,
+    "history_log": [
+      {
+        "timestamp": "2026-10-09T18:15:42.793629",
+        "stage": "1. OBSERVATION",
+        "user_input": "heyyyyyyyyyyy",
+        "bot_response": "Hello! It seems like you're saying \"hello\" in a very enthusiastic way. How can I help you today? What's on your mind?",
+        "stuck_signal": false
+      },
+      {
+        "timestamp": "2026-10-09T18:15:54.232538",
+        "stage": "1. OBSERVATION",
+        "user_input": "hey hey hey",
+        "bot_response": "That's quite a rhythmic greeting! It sounds like you're excited to start something.\n\nWhat topic or subject are you curious about? Are you looking at something specific and trying to make sense of it?",
+        "stuck_signal": false
+      },
+      {
+        "timestamp": "2026-10-09T18:16:04.423782",
+        "stage": "1. OBSERVATION",
+        "user_input": "nothing",
+        "bot_response": "I'm glad to hear that! When you're ready, tell me what science topic, phenomenon, or problem you're looking at so we can dive in.",
+        "stuck_signal": false
+      },
+      {
+        "timestamp": "2026-10-09T18:16:12.585889",
+        "stage": "1. OBSERVATION",
+        "user_input": "cool",
+        "bot_response": "That's a great response! You're showing that you're open to exploring something new. What's the first thing that comes to mind when you think of \"cool\"? Is it a scientific concept, a natural phenomenon, or something else?",
+        "stuck_signal": false
+      },
+      {
+        "timestamp": "2026-10-09T18:17:02.676309",
+        "stage": "2. HYPOTHESIS",
+        "user_input": "hypothesis of cool",
+        "bot_response": "You're getting close to the idea of a hypothesis! A hypothesis is an educated guess that explains a phenomenon or predicts a result. \n\nFor example, if you notice that a certain type of plant grows better in cooler temperatures, you might hypothesize that the plant's growth is directly related to the temperature. \n\nWhat do you think could be the hypothesis for something you find \"cool\"? Is it related to physics, biology, or something else?",
+        "stuck_signal": false
+      }
+    ],
+    "end_time": "2026-10-09T18:17:17.166183",
+    "user_rating": 4,
+    "user_feedback": "ok"
   }
 ]
