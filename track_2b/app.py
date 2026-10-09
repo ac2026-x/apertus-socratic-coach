@@ -1,12 +1,17 @@
 import os
+import sys
 import streamlit as st
 from dotenv import load_dotenv
-from coach import ScientificCoach
 
-# Explicitly load .env from the track_2b directory
+# Ensure track_2b directory is in Python's search path and load .env locally
 current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
 env_path = os.path.join(current_dir, ".env")
 load_dotenv(dotenv_path=env_path)
+
+from coach import ScientificCoach
 
 st.set_page_config(page_title="Scaffold AI Coach", page_icon="🔬", layout="wide")
 
