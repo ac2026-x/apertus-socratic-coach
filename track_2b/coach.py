@@ -68,10 +68,37 @@ class ScientificCoach:
         }
 
     def respond(self, user_message: str, history: list, is_stuck_signal: bool = False) -> str:
-        stage_name, stage_obj = self.STAGES[self.stage_idx]
+        # 1. Quick greeting/small talk filter
+        cleaned_input = user_message.strip().lower()
+        greetings = ["hi", "hello", "hey", "good evening", "good morning", "good afternoon", "thanks", "thank you"]
+        pleasantries = ["good", "fine", "ok", "okay", "nothing", "not much", "alright"]
         
-        # Track turns and stuck count for analytics
+        if cleaned_input in greetings:
+            bot_reply = "Hello! I'm Scaffold AI, your Apertus-powered scientific reasoning mentor. What scientific topic, experiment, or question would you like to explore today?"
+            self.telemetry["history_log"].append({
+                "timestamp": datetime.now().isoformat(),
+                "stage": self.STAGES[self.stage_idx][0],
+                "user_input": user_message,
+                "bot_response": bot_reply,
+                "stuck_signal": is_stuck_signal
+            })
+            return bot_reply
+        
+        if cleaned_input in pleasantries or len(cleaned_input) < 4:
+            bot_reply = "I'm glad to hear that! When you're ready, tell me what science topic, phenomenon, or problem you're looking at so we can dive in."
+            self.telemetry["history_log"].append({
+                "timestamp": datetime.now().isoformat(),
+                "stage": self.STAGES[self.stage_idx][0],
+                "user_input": user_message,
+                "bot_response": bot_reply,
+                "stuck_signal": is_stuck_signal
+            })
+            return bot_reply
+
+        # 2. Socratic State Machine logic
+        stage_name, stage_obj = self.STAGES[self.stage_idx]
         self.telemetry["turns_per_stage"][stage_name] += 1
+        
         if is_stuck_signal:
             self.stuck_count += 1
             self.telemetry["stuck_clicks"] += 1
@@ -81,7 +108,7 @@ class ScientificCoach:
             stage_objective=stage_obj,
             hint_level=self.hint_level
         )
-
+        
         messages = [{"role": "system", "content": system_content}]
         for h in history:
             messages.append({"role": h["role"], "content": h["content"]})
@@ -89,15 +116,15 @@ class ScientificCoach:
         prompt_input = user_message
         if is_stuck_signal:
             prompt_input = "[SYSTEM NOTE: The student clicked 'I am stuck'. Provide a warm, alternative angle or simple analogy.] " + user_message
-
+            
         messages.append({"role": "user", "content": prompt_input})
-        
+
         try:
             response = self.client.chat.completions.create(
                 model="swiss-ai/apertus-v1.5-8b",
                 messages=messages,
                 temperature=0.3,
-                max_tokens=300  # <-- CHANGED FROM 150 TO 300
+                max_tokens=300
             )
             bot_reply = response.choices[0].message.content
         except Exception as e:
@@ -111,7 +138,7 @@ class ScientificCoach:
             "bot_response": bot_reply,
             "stuck_signal": is_stuck_signal
         })
-
+        
         return bot_reply
 
     def advance(self):
