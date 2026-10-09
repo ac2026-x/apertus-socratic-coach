@@ -1,49 +1,61 @@
 import os
+import json
+from datetime import datetime
 from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
 SYSTEM_PROMPT_TEMPLATE = """
-YOU ARE A SOCRATIC SCIENTIFIC REASONING COACH BUILT ON APERTUS.
-YOUR CORE GOAL IS TO DEVELOP SCIENTIFIC THINKING, NOT TO PROVIDE DIRECT ANSWERS.
+YOU ARE A WARM, COMPASSIONATE SOCRATIC SCIENCE MENTOR BUILT ON APERTUS.
+YOUR OBJECTIVE: DEVELOP SCIENTIFIC REASONING WITHOUT EVER GIVING DIRECT ANSWERS.
 
 CURRENT STAGE: {stage_name}
 STAGE OBJECTIVE: {stage_objective}
 HINT LEVEL: {hint_level}
 
-ABSOLUTE RULES:
-1. NEVER reveal the direct scientific explanation, formula, or final answer under ANY circumstances.
-2. Output EXACTLY ONE conversational question or short guiding statement per turn (under 60 words).
-3. Focus strictly on helping the learner fulfill the objective of the CURRENT STAGE ({stage_name}).
-4. If the learner explicitly asks for the answer, refuse gently and redirect them to the current stage question.
-5. If the learner makes an incorrect scientific claim, DO NOT validate it as true; ask what test or evidence would verify it.
+TONE & BEHAVIORAL RULES:
+1. BE ENCOURAGING AND EMPATHETIC: Never say "I cannot fulfill this request" or "My rules forbid me".
+2. IF ASKED FOR THE ANSWER: Warmly pivot. Say something like: "I know it's tempting to jump straight to the answer, but you're really close! Let's try looking at it this way..."
+3. KEEP IT CONCISE: Provide short responses (under 80 words). Ask ONE question at a time and avoid overly long bulleted lists so responses don't cut off.
+4. IF THE STUDENT IS STUCK (Stuck counter > 1): Provide a simpler angle or an intuitive analogy, but do NOT give the answer away.
+5. CELEBRATE EFFORT: Acknowledge what the user observed before asking your next question.
 """
 
 class ScientificCoach:
     STAGES = [
-        ("1. OBSERVATION", "Help the learner clearly state the scientific phenomenon or problem."),
-        ("2. HYPOTHESIS", "Guide the learner to propose a testable cause-and-effect hypothesis."),
-        ("3. ALTERNATIVES", "Ask the learner to state at least one alternative explanation."),
-        ("4. PREDICTION", "Ask the learner what specific outcome should occur if their hypothesis holds."),
-        ("5. EXPERIMENT", "Guide the learner to propose a simple experiment or test with controlled variables."),
-        ("6. EVIDENCE", "Ask what data or observations would support or disprove the hypothesis."),
-        ("7. INTERPRETATION", "Guide the learner on how to interpret expected test results."),
-        ("8. REVISION", "Ask if the hypothesis needs modification based on outcomes."),
-        ("9. CONCLUSION", "Summarize the core scientific reasoning developed by the student.")
+        ("1. OBSERVATION", "Help the learner clearly state what they see or notice."),
+        ("2. HYPOTHESIS", "Guide the learner to propose a cause-and-effect idea."),
+        ("3. ALTERNATIVES", "Encourage the learner to think of one other possibility."),
+        ("4. PREDICTION", "Ask what should happen if their hypothesis is correct."),
+        ("5. EXPERIMENT", "Guide them to propose a simple, controlled test."),
+        ("6. EVIDENCE", "Ask what data would prove or disprove their idea."),
+        ("7. INTERPRETATION", "Help them analyze test outcomes."),
+        ("8. REVISION", "Ask if their hypothesis needs adjusting."),
+        ("9. CONCLUSION", "Summarize the core scientific reasoning developed together.")
     ]
 
     def __init__(self, api_key: str):
         self.api_key = api_key
-        
-        # Initialize OpenAI client for Public AI with required User-Agent header
         self.client = OpenAI(
             base_url="https://api.publicai.co/v1",
             api_key=api_key,
             default_headers={"User-Agent": "ApertusSocraticCoach/1.0"}
         )
+        self.reset()
+
+    def reset(self):
         self.stage_idx = 0
         self.hint_level = 1
+        self.stuck_count = 0
+        self.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.telemetry = {
+            "session_id": self.session_id,
+            "start_time": datetime.now().isoformat(),
+            "turns_per_stage": {stage[0]: 0 for stage in self.STAGES},
+            "stuck_clicks": 0,
+            "history_log": []
+        }
 
     def get_stage_info(self):
         name, obj = self.STAGES[self.stage_idx]
@@ -52,12 +64,18 @@ class ScientificCoach:
             "objective": obj,
             "index": self.stage_idx + 1,
             "total": len(self.STAGES),
-            "stuck_count": getattr(self, "stuck_count", 0)  # Safe fallback if state is cached
+            "stuck_count": getattr(self, "stuck_count", 0)
         }
 
     def respond(self, user_message: str, history: list, is_stuck_signal: bool = False) -> str:
         stage_name, stage_obj = self.STAGES[self.stage_idx]
         
+        # Track turns and stuck count for analytics
+        self.telemetry["turns_per_stage"][stage_name] += 1
+        if is_stuck_signal:
+            self.stuck_count += 1
+            self.telemetry["stuck_clicks"] += 1
+
         system_content = SYSTEM_PROMPT_TEMPLATE.format(
             stage_name=stage_name,
             stage_objective=stage_obj,
@@ -65,32 +83,62 @@ class ScientificCoach:
         )
 
         messages = [{"role": "system", "content": system_content}]
-        
         for h in history:
             messages.append({"role": h["role"], "content": h["content"]})
             
-        messages.append({"role": "user", "content": user_message})
+        prompt_input = user_message
+        if is_stuck_signal:
+            prompt_input = "[SYSTEM NOTE: The student clicked 'I am stuck'. Provide a warm, alternative angle or simple analogy.] " + user_message
 
+        messages.append({"role": "user", "content": prompt_input})
+        
         try:
-            # Send request using exact Public AI model identifier
             response = self.client.chat.completions.create(
                 model="swiss-ai/apertus-v1.5-8b",
                 messages=messages,
-                temperature=0.2,
-                max_tokens=150
+                temperature=0.3,
+                max_tokens=300  # <-- CHANGED FROM 150 TO 300
             )
-            return response.choices[0].message.content
-
+            bot_reply = response.choices[0].message.content
         except Exception as e:
-            return f"Public AI API Error: {e}"
+            bot_reply = f"I'm having a brief connection hiccup ({e}), but let's keep thinking: what do you observe right now?"
+
+        # Log conversation telemetry
+        self.telemetry["history_log"].append({
+            "timestamp": datetime.now().isoformat(),
+            "stage": stage_name,
+            "user_input": user_message,
+            "bot_response": bot_reply,
+            "stuck_signal": is_stuck_signal
+        })
+
+        return bot_reply
 
     def advance(self):
         if self.stage_idx < len(self.STAGES) - 1:
             self.stage_idx += 1
             self.hint_level = 1
+            self.stuck_count = 0
             return True
         return False
 
-    def reset(self):
-        self.stage_idx = 0
-        self.hint_level = 1
+    def save_session_analytics(self, rating: int, feedback_text: str):
+        self.telemetry["end_time"] = datetime.now().isoformat()
+        self.telemetry["user_rating"] = rating
+        self.telemetry["user_feedback"] = feedback_text
+        
+        os.makedirs("data", exist_ok=True)
+        filepath = "data/session_logs.json"
+        
+        logs = []
+        if os.path.exists(filepath):
+            try:
+                with open(filepath, "r") as f:
+                    logs = json.load(f)
+            except Exception:
+                logs = []
+                
+        logs.append(self.telemetry)
+        
+        with open(filepath, "w") as f:
+            json.dump(logs, f, indent=2)

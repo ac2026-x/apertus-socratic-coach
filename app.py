@@ -84,16 +84,28 @@ else:
     st.success("🎉 Great job exercising your scientific reasoning skills today!")
     st.subheader("Session Feedback & Reflection")
     
-    with st.form("feedback_form"):
-        rating = st.slider("How helpful was the coach's guidance?", 1, 5, 4)
-        feedback = st.text_area("What felt frustrating or particularly helpful during this session?")
-        submitted = st.form_submit_button("Submit Feedback & Save Telemetry")
-        
-        if submitted:
-            coach.save_session_analytics(rating, feedback)
-            st.success("Thank you! Session analytics saved to `data/session_logs.json`.")
-            if st.button("Start New Session"):
-                coach.reset()
-                st.session_state.history = []
-                st.session_state.session_ended = False
+    # Track whether feedback has been saved
+    if "feedback_submitted" not in st.session_state:
+        st.session_state.feedback_submitted = False
+
+    if not st.session_state.feedback_submitted:
+        with st.form("feedback_form"):
+            rating = st.slider("How helpful was the coach's guidance?", 1, 5, 4)
+            feedback = st.text_area("What felt frustrating or particularly helpful during this session?")
+            submitted = st.form_submit_button("Submit Feedback & Save Telemetry")
+            
+            if submitted:
+                coach.save_session_analytics(rating, feedback)
+                st.session_state.feedback_submitted = True
                 st.rerun()
+
+    else:
+        st.success("Thank you! Session analytics saved to `data/session_logs.json`.")
+        
+        # Standalone button OUTSIDE the form block
+        if st.button("Start New Session 🔄"):
+            coach.reset()
+            st.session_state.history = []
+            st.session_state.session_ended = False
+            st.session_state.feedback_submitted = False
+            st.rerun()
