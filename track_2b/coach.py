@@ -127,8 +127,11 @@ class ScientificCoach:
         self.telemetry["user_rating"] = rating
         self.telemetry["user_feedback"] = feedback_text
         
-        os.makedirs("data", exist_ok=True)
-        filepath = "data/session_logs.json"
+        # Robust path resolution relative to coach.py directory
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(current_dir, "data")
+        os.makedirs(data_dir, exist_ok=True)
+        filepath = os.path.join(data_dir, "session_logs.json")
         
         logs = []
         if os.path.exists(filepath):
