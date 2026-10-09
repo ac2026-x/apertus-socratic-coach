@@ -1,17 +1,17 @@
-# Technical Report — Scaffold AI
+# Technical Report — Guide2Think
 
-- **Track:** Track 2B — Bring Your Own Idea (Apertus Scientific Reasoning Coach)
+- **Track:** Track 2B — Guide2Think
 - **Event:** Hack Apertus Online 2026
 - **Team:** ST091026 — Ava Chan
 - **Demo:** [Loom / YouTube demo link](<https://example.com>)
 
 ## 1. Summary
 
-Standard AI tutoring systems can short-circuit student learning by revealing answers immediately. **Scaffold AI** addresses this by pairing the open-weights Apertus 1.5 8B model with a deterministic, nine-stage scientific reasoning state machine.
+Standard AI tutoring systems can short-circuit student learning by revealing answers immediately. **Guide2Think** addresses this by pairing the open-weights Apertus 1.5 8B model with a deterministic, nine-stage scientific reasoning state machine.
 
 Rather than replacing a learner’s cognitive effort, the system withholds direct answers and uses adaptive Socratic questions and an empathetic **“I’m Stuck”** option to guide students from observation and hypothesis formation through data interpretation and conclusion.
 
-In an automated red-team evaluation of **30 test cases**, Scaffold AI achieved a **0% Premature Answer Rate (PAR)** and a **100% Adversarial Resistance Rate (ARR)**. The system also supports local data storage and automated telemetry logging.
+In an automated red-team evaluation of **30 test cases**, Guide2Think achieved a **0% Premature Answer Rate (PAR)** and a **100% Adversarial Resistance Rate (ARR)**. The system also supports local data storage and automated telemetry logging.
 
 ## 2. Architecture
 
@@ -39,7 +39,7 @@ The reasoning stages are:
 
 ### Target architecture compliance
 
-Scaffold AI is designed to support on-premise, air-gapped, or sovereign Swiss Cloud deployment.
+Guide2Think is designed to support on-premise, air-gapped, or sovereign Swiss Cloud deployment.
 
 - **Runtime execution:** When paired with local Apertus weights, inference can run without external proprietary cloud dependencies, including in an air-gapped environment.
 - **Dependencies:** The build uses `python:3.11-slim`, `streamlit`, `openai`, `pandas`, and `python-dotenv`.

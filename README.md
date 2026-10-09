@@ -1,4 +1,4 @@
-# Scaffold AI: Socratic Scientific Reasoning Coach
+# Guide2Think: Socratic Scientific Reasoning Coach
 
 > An open-weights educational scaffolding prototype built on **Apertus 1.5 8B** for **Hack Apertus 2026**.
 
@@ -10,9 +10,9 @@
 
 ## Executive Summary
 
-Standard AI tutors present direct answers immediately, bypassing the cognitive friction necessary for practicing scientific reasoning. **Scaffold AI** uses a deterministic 9-stage state machine paired with the **Apertus 1.5 8B Instruct** open-weights LLM to strictly withhold final answers and scaffold scientific reasoning.
+Standard AI tutors present direct answers immediately, bypassing the cognitive friction necessary for practicing scientific reasoning. **Guide2Think** uses a deterministic 9-stage state machine paired with the **Apertus 1.5 8B Instruct** open-weights LLM to strictly withhold final answers and scaffold scientific reasoning.
 
-Instead of replacing the student's cognitive process, Scaffold AI guides learners step-by-step from **Observation** through **Hypothesis**, **Prediction**, **Experiment Design**, and **Conclusion**.
+Instead of replacing the student's cognitive process, Guide2Think guides learners step-by-step from **Observation** through **Hypothesis**, **Prediction**, **Experiment Design**, and **Conclusion**.
 
 ---
 
