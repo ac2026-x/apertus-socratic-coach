@@ -3,7 +3,10 @@ import streamlit as st
 from dotenv import load_dotenv
 from coach import ScientificCoach
 
-load_dotenv()
+# Explicitly load .env from the track_2b directory
+current_dir = os.path.dirname(os.path.abspath(__file__))
+env_path = os.path.join(current_dir, ".env")
+load_dotenv(dotenv_path=env_path)
 
 st.set_page_config(page_title="Scaffold AI Coach", page_icon="🔬", layout="wide")
 
