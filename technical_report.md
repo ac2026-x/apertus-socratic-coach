@@ -3,7 +3,7 @@
 - **Track:** Track 2B — Guide2Think
 - **Event:** Hack Apertus Online 2026
 - **Team:** ST091026 — Ava Chan
-- **Demo:** [Loom / YouTube demo link](<https://example.com>)
+- **Demo:** [Demo video](<https://drive.google.com/file/d/1NTXfb0j35dBcdKa3fIkcf0tOSUr8vpYa/view?usp=sharing>)
 
 ## 1. Summary
 
