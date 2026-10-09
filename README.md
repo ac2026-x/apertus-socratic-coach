@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-Standard AI tutors present direct answers immediately, short-circuiting the cognitive friction necessary for learning the scientific method. **Scaffold AI** uses a deterministic 9-stage state machine paired with the **Apertus 1.5 8B Instruct** open-weights LLM to strictly withhold final answers and scaffold scientific reasoning.
+Standard AI tutors present direct answers immediately, bypassing the cognitive friction necessary for practicing the scientific reasoning. **Scaffold AI** uses a deterministic 9-stage state machine paired with the **Apertus 1.5 8B Instruct** open-weights LLM to strictly withhold final answers and scaffold scientific reasoning.
 
 Instead of replacing the student's cognitive process, Scaffold AI guides learners step-by-step from **Observation** through **Hypothesis**, **Prediction**, **Experiment Design**, and **Conclusion**.
 
