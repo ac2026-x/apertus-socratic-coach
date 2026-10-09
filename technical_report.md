@@ -1,4 +1,3 @@
-```markdown
 # Technical Report — Scaffold AI
 
 - **Track:** Track 2B — Bring Your Own Idea (Apertus Scientific Reasoning Coach)
@@ -141,4 +140,3 @@ Creative Commons Attribution 4.0 International (CC BY 4.0).
 
 - Swiss AI Initiative. *Apertus 1.5 8B Technical Documentation and Model Cards.*
 - *Hack Apertus 2026 Challenge Guidelines and Track 2B Specifications.*
-```
