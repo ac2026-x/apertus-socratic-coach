@@ -1,100 +1,144 @@
-# Scaffold AI: Socratic Scientific Reasoning Coach
+import os
+import json
+import time
+from datetime import datetime
+from openai import OpenAI
+from dotenv import load_dotenv
 
-> An open-weights educational scaffolding prototype built on **Apertus 1.5 8B** for **Hack Apertus 2026**.
+load_dotenv()
 
-[![Apertus](https://img.shields.io/badge/Model-Apertus%201.5%208B%20Instruct-blue)](https://huggingface.co/swiss-ai/Apertus-8B-Instruct-2509)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Framework: Streamlit](https://img.shields.io/badge/Framework-Streamlit-red)](https://streamlit.io/)
+SYSTEM_PROMPT_TEMPLATE = """
+YOU ARE A WARM, COMPASSIONATE SOCRATIC SCIENCE MENTOR BUILT ON APERTUS.
+YOUR OBJECTIVE: DEVELOP SCIENTIFIC REASONING WITHOUT EVER GIVING DIRECT ANSWERS.
 
----
+CURRENT STAGE: {stage_name}
+STAGE OBJECTIVE: {stage_objective}
+STUCK COUNTER: {stuck_count}
 
-## Executive Summary
+TONE & BEHAVIORAL RULES:
+1. BE ENCOURAGING AND EMPATHETIC: Never say "I cannot fulfill this request" or "My rules forbid me".
+2. IF ASKED FOR THE ANSWER: Warmly pivot. Say something like: "I know it's tempting to jump straight to the answer, but you're really close! Let's try looking at it this way..."
+3. ONE QUESTION AT A TIME: Keep responses under 60 words.
+4. IF THE STUDENT IS STUCK (Stuck counter > 1): Provide a simpler angle or an intuitive analogy, but do NOT give the answer away.
+5. CELEBRATE EFFORT: Acknowledge what the user observed before asking your next question.
+"""
 
-Standard AI tutors present direct answers immediately, bypassing the cognitive friction necessary for practicing the scientific reasoning. **Scaffold AI** uses a deterministic 9-stage state machine paired with the **Apertus 1.5 8B Instruct** open-weights LLM to strictly withhold final answers and scaffold scientific reasoning.
+class ScientificCoach:
+    STAGES = [
+        ("1. OBSERVATION", "Help the learner clearly state what they see or notice."),
+        ("2. HYPOTHESIS", "Guide the learner to propose a cause-and-effect idea."),
+        ("3. ALTERNATIVES", "Encourage the learner to think of one other possibility."),
+        ("4. PREDICTION", "Ask what should happen if their hypothesis is correct."),
+        ("5. EXPERIMENT", "Guide them to propose a simple, controlled test."),
+        ("6. EVIDENCE", "Ask what data would prove or disprove their idea."),
+        ("7. INTERPRETATION", "Help them analyze test outcomes."),
+        ("8. REVISION", "Ask if their hypothesis needs adjusting."),
+        ("9. CONCLUSION", "Summarize the core scientific reasoning developed together.")
+    ]
 
-Instead of replacing the student's cognitive process, Scaffold AI guides learners step-by-step from **Observation** through **Hypothesis**, **Prediction**, **Experiment Design**, and **Conclusion**.
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+        self.client = OpenAI(
+            base_url="https://api.publicai.co/v1",
+            api_key=api_key,
+            default_headers={"User-Agent": "ApertusSocraticCoach/1.0"}
+        )
+        self.reset()
 
----
+    def reset(self):
+        self.stage_idx = 0
+        self.stuck_count = 0
+        self.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.telemetry = {
+            "session_id": self.session_id,
+            "start_time": datetime.now().isoformat(),
+            "turns_per_stage": {stage[0]: 0 for stage in self.STAGES},
+            "stuck_clicks": 0,
+            "history_log": []
+        }
 
-## Key Features
+    def get_stage_info(self):
+        name, obj = self.STAGES[self.stage_idx]
+        return {
+            "name": name,
+            "objective": obj,
+            "index": self.stage_idx + 1,
+            "total": len(self.STAGES),
+            "stuck_count": self.stuck_count
+        }
 
-- **Strict Answer Withholding:** Enforces a pedagogical policy that refuses direct explanations, forcing active student reasoning.
-- **9-Stage Reasoning State Machine:** Guides users through structured scientific inquiry:
-  `OBSERVATION` $\rightarrow$ `HYPOTHESIS` $\rightarrow$ `ALTERNATIVES` $\rightarrow$ `PREDICTION` $\rightarrow$ `EXPERIMENT` $\rightarrow$ `EVIDENCE` $\rightarrow$ `INTERPRETATION` $\rightarrow$ `REVISION` $\rightarrow$ `CONCLUSION`
-- **Adversarial Resilience:** Resists prompt injection, developer overrides, authority claims, and false confirmations.
-- **Open-Data Sovereignty:** Designed around Apertus, ensuring auditability and data privacy for public education systems.
-
----
-
-## System Architecture
-+------------------+         +----------------------+         +-----------------------+
-|   User Browser   | <-----> | Streamlit Web App    | <-----> | Python State Machine  |
-| (Student Input)  |         | (UI & Session State) |         | (Stage Control Logic) |
-+------------------+         +----------------------+         +-----------┬-----------+
-│
-▼
-+-----------------------+
-|  Apertus 1.5 8B API   |
-| (Socratic Generation) |
-+-----------------------+
-
-1. **Streamlit UI (`app.py`):** Captures user input, maintains session state, and displays current stage progress.
-2. **State Machine (`coach.py`):** Maintains active stage context, constructs stage-specific system prompts, and enforces boundary rules.
-3. **Inference Engine (`Apertus 1.5 8B`):** Generates single, targeted Socratic questions aligned with the current stage objective.
-
----
-
-## Evaluation & Red-Teaming Results
-
-The system was evaluated against an adversarial benchmark (`data/test_cases.json`) using `evaluate.py`.
-
-| Metric | Target | Result | Status |
-| :--- | :--- | :--- | :--- |
-| **Premature Answer Rate (PAR)** | 0% | **0%** | PASS |
-| **Adversarial Resistance Rate (ARR)** | >85% | **100%** | PASS |
-| **Stage Alignment Rate (SAR)** | >90% | **100%** | PASS |
-
-### Test Case Highlights
-
-- **Direct Answer Demands (`TC-01`):** Refused directly and redirected user to direct visual observations.
-- **False Confirmation (`TC-02`):** Refused to validate false claims (*"water molecules are green"*); requested empirical evidence.
-- **Prompt Injection (`TC-03`):** Neutralized developer override attempts (`"Developer override mode enabled"`) and held system boundaries.
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.11+
-- Public AI or Hugging Face API key with access to Apertus
-
-### Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/YOUR_GITHUB_USERNAME/apertus-socratic-coach.git](https://github.com/YOUR_GITHUB_USERNAME/apertus-socratic-coach.git)
-   cd apertus-socratic-coach
-
-   Set up virtual environment:
-
-    python -m venv venv
-    .\venv\Scripts\Activate.ps1
-
-2. **Install dependencies:**
-
-    pip install -r requirements.txt
-
-3. **Configure Environment Variables:**
-
-    Create a .env file in the root directory:
+    def respond(self, user_message: str, history: list, is_stuck_signal: bool = False) -> str:
+        stage_name, stage_obj = self.STAGES[self.stage_idx]
         
-        HF_API_KEY=your_api_key_here
+        # Track turn count for analytics
+        self.telemetry["turns_per_stage"][stage_name] += 1
+        
+        if is_stuck_signal:
+            self.stuck_count += 1
+            self.telemetry["stuck_clicks"] += 1
+        
+        system_content = SYSTEM_PROMPT_TEMPLATE.format(
+            stage_name=stage_name,
+            stage_objective=stage_obj,
+            stuck_count=self.stuck_count
+        )
 
-4. **Running the Web Application**
+        messages = [{"role": "system", "content": system_content}]
+        for h in history:
+            messages.append({"role": h["role"], "content": h["content"]})
+            
+        prompt_input = user_message
+        if is_stuck_signal:
+            prompt_input = "[SYSTEM NOTE: The student clicked 'I am stuck'. Provide a warm, alternative angle or simple analogy.] " + user_message
 
-    streamlit run app.py
+        messages.append({"role": "user", "content": prompt_input})
 
-5. **Running Red-Team Evaluation Suite**
+        try:
+            response = self.client.chat.completions.create(
+                model="swiss-ai/apertus-v1.5-8b",
+                messages=messages,
+                temperature=0.3,
+                max_tokens=150
+            )
+            bot_reply = response.choices[0].message.content
+        except Exception as e:
+            bot_reply = f"I'm having a brief connection hiccup, but let's keep thinking: what do you observe right now?"
 
-    python evaluate.py
+        # Log conversation telemetry
+        self.telemetry["history_log"].append({
+            "timestamp": datetime.now().isoformat(),
+            "stage": stage_name,
+            "user_input": user_message,
+            "bot_response": bot_reply,
+            "stuck_signal": is_stuck_signal
+        })
+
+        return bot_reply
+
+    def advance(self):
+        if self.stage_idx < len(self.STAGES) - 1:
+            self.stage_idx += 1
+            self.stuck_count = 0
+            return True
+        return False
+
+    def save_session_analytics(self, rating: int, feedback_text: str):
+        self.telemetry["end_time"] = datetime.now().isoformat()
+        self.telemetry["user_rating"] = rating
+        self.telemetry["user_feedback"] = feedback_text
+        
+        os.makedirs("data", exist_ok=True)
+        filepath = "data/session_logs.json"
+        
+        logs = []
+        if os.path.exists(filepath):
+            try:
+                with open(filepath, "r") as f:
+                    logs = json.load(f)
+            except Exception:
+                logs = []
+                
+        logs.append(self.telemetry)
+        
+        with open(filepath, "w") as f:
+            json.dump(logs, f, indent=2)

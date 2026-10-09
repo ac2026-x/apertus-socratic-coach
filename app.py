@@ -5,67 +5,95 @@ from coach import ScientificCoach
 
 load_dotenv()
 
-st.set_page_config(page_title="Socratic Science Coach", page_icon="🔬", layout="wide")
+st.set_page_config(page_title="Scaffold AI Coach", page_icon="🔬", layout="wide")
 
-# App Header
-st.title("🔬 Apertus Socratic Science Coach")
-st.caption("Scaffolding scientific thinking without giving away answers.")
+st.title("🔬 Scaffold AI: Socratic Science Coach")
+st.caption("Apertus-powered scientific reasoning mentor with adaptive scaffolding.")
 
-# Get API key from .env
 api_key = os.getenv("HF_API_KEY")
-
 if not api_key:
-    st.error("HF_API_KEY missing! Please check your .env file.")
+    st.error("HF_API_KEY missing from .env file!")
     st.stop()
 
-# Initialize Coach and session state memory
 if "coach" not in st.session_state:
     st.session_state.coach = ScientificCoach(api_key)
     st.session_state.history = []
+    st.session_state.session_ended = False
 
 coach = st.session_state.coach
 stage_info = coach.get_stage_info()
 
-# --- SIDEBAR: Stage Machine Controls ---
-st.sidebar.header("Reasoning Stage Progress")
+# --- SIDEBAR CONTROLS ---
+st.sidebar.header("Reasoning Progress")
 st.sidebar.progress(stage_info["index"] / stage_info["total"])
-st.sidebar.subheader(f"Stage {stage_info['index']} of 9")
-st.sidebar.markdown(f"**{stage_info['name']}**")
-st.sidebar.info(f"**Objective:** {stage_info['objective']}")
+st.sidebar.subheader(f"Stage {stage_info['index']}/9: {stage_info['name']}")
+st.sidebar.info(stage_info["objective"])
 
 st.sidebar.markdown("---")
 
-col_prev, col_next = st.sidebar.columns(2)
-with col_next:
-    if st.button("Next Stage ▶️"):
-        if coach.advance():
-            st.rerun()
-        else:
-            st.sidebar.success("Already at Final Stage!")
+# Adaptive Circuit Breaker Warning
+if stage_info["stuck_count"] >= 2:
+    st.sidebar.warning("💡 You seem stuck on this step. Feel free to use 'Next Stage' or click 'I'm Stuck' for another angle!")
 
-with col_prev:
-    if st.button("Reset Session 🔄"):
-        coach.reset()
-        st.session_state.history = []
+col1, col2 = st.sidebar.columns(2)
+with col1:
+    if st.button("Next Stage ▶️"):
+        coach.advance()
         st.rerun()
 
-# --- MAIN CHAT INTERFACE ---
-for msg in st.session_state.history:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
+with col2:
+    if st.button("Reset 🔄"):
+        coach.reset()
+        st.session_state.history = []
+        st.session_state.session_ended = False
+        st.rerun()
 
-# User Chat Input
-if user_input := st.chat_input("State your problem, observation, or answer..."):
-    # Display user input
-    st.chat_message("user").write(user_input)
+st.sidebar.markdown("---")
+if st.sidebar.button("Finish & Exit Session 🏁"):
+    st.session_state.session_ended = True
+    st.rerun()
+
+# --- MAIN CHAT AREA ---
+if not st.session_state.session_ended:
+    for msg in st.session_state.history:
+        with st.chat_message(msg["role"]):
+            st.write(msg["content"])
+
+    # Action Buttons under chat
+    col_input, col_stuck = st.columns([4, 1])
     
-    # Get coach response
-    with st.spinner("Apertus is formulating a coaching response..."):
-        bot_response = coach.respond(user_input, st.session_state.history)
+    with col_stuck:
+        stuck_clicked = st.button("🙋 I'm Stuck!")
+
+    user_input = st.chat_input("Share your observation or answer...")
+
+    if user_input or stuck_clicked:
+        prompt_text = user_input if user_input else "I am having trouble with this question."
+        st.chat_message("user").write(prompt_text)
         
-    # Display coach output
-    st.chat_message("assistant").write(bot_response)
+        with st.spinner("Your mentor is formulating a hint..."):
+            reply = coach.respond(prompt_text, st.session_state.history, is_stuck_signal=stuck_clicked)
+            
+        st.chat_message("assistant").write(reply)
+        st.session_state.history.append({"role": "user", "content": prompt_text})
+        st.session_state.history.append({"role": "assistant", "content": reply})
+        st.rerun()
+
+# --- END OF SESSION FEEDBACK FORM ---
+else:
+    st.success("🎉 Great job exercising your scientific reasoning skills today!")
+    st.subheader("Session Feedback & Reflection")
     
-    # Update local memory
-    st.session_state.history.append({"role": "user", "content": user_input})
-    st.session_state.history.append({"role": "assistant", "content": bot_response})
+    with st.form("feedback_form"):
+        rating = st.slider("How helpful was the coach's guidance?", 1, 5, 4)
+        feedback = st.text_area("What felt frustrating or particularly helpful during this session?")
+        submitted = st.form_submit_button("Submit Feedback & Save Telemetry")
+        
+        if submitted:
+            coach.save_session_analytics(rating, feedback)
+            st.success("Thank you! Session analytics saved to `data/session_logs.json`.")
+            if st.button("Start New Session"):
+                coach.reset()
+                st.session_state.history = []
+                st.session_state.session_ended = False
+                st.rerun()

@@ -51,10 +51,11 @@ class ScientificCoach:
             "name": name,
             "objective": obj,
             "index": self.stage_idx + 1,
-            "total": len(self.STAGES)
+            "total": len(self.STAGES),
+            "stuck_count": getattr(self, "stuck_count", 0)  # Safe fallback if state is cached
         }
 
-    def respond(self, user_message: str, history: list) -> str:
+    def respond(self, user_message: str, history: list, is_stuck_signal: bool = False) -> str:
         stage_name, stage_obj = self.STAGES[self.stage_idx]
         
         system_content = SYSTEM_PROMPT_TEMPLATE.format(
